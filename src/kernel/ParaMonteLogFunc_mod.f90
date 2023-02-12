@@ -50,18 +50,18 @@ module ParaMonteLogFunc_mod
     !> Fortran interface to the objective function implementation (getLogFunc). Here, `proc` stands for the procedure interface.
     abstract interface
 #if defined CFI_ENABLED
-        function getLogFunc_proc(ndim,Point) result(logFunc) bind(C)
+        function getLogFunc_proc(ndim, njob, Point) result(LogFunc) bind(C)
 #else
-        function getLogFunc_proc(ndim,Point) result(logFunc)
+        function getLogFunc_proc(ndim,Point) result(LogFunc)
 #endif
             import :: IK, RK
 #if defined CFI_ENABLED
-            integer(IK), intent(in), value  :: ndim
+            integer(IK), intent(in), value  :: ndim, njob
 #else
-            integer(IK), intent(in)         :: ndim
+            integer(IK), intent(in)         :: ndim, njob
 #endif
             real(RK), intent(in)            :: Point(ndim)
-            real(RK)                        :: logFunc
+            real(RK)                        :: LogFunc(njob)
         end function getLogFunc_proc
     end interface
 
@@ -84,11 +84,11 @@ module ParaMonteLogFunc_mod
     !> This is to be used only to bind the ParaMonte library compiled by the 
     !> Intel Compilers with Fortran applications compiled with GNU compilers on Windows.
     abstract interface
-        function getLogFuncIntelGNU_proc(ndim,Point) result(logFunc) bind(C)
+        function getLogFuncIntelGNU_proc(ndim, njob, Point) result(LogFunc) bind(C)
             import :: IK, RK
             integer(IK), intent(in)         :: ndim
             real(RK), intent(in)            :: Point(ndim)
-            real(RK)                        :: logFunc
+            real(RK)                        :: LogFunc(njob)
         end function getLogFuncIntelGNU_proc
     end interface
 

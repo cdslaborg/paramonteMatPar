@@ -52,6 +52,7 @@ function &
 subroutine &
 #endif
     runParaDRAM ( ndim          &
+                , njob          &
                 , getLogFunc4C  &
                 , InputFileVec  &
                 , lenInputFile  &
@@ -67,6 +68,7 @@ subroutine &
     implicit none
 
     integer(IK), intent(in), value                          :: ndim
+    integer(IK), intent(in), value                          :: njob
     integer(IK), intent(in), value                          :: lenInputFile
     type(c_funptr), intent(in), value                       :: getLogFunc4C
     character(len=1,kind=c_char), dimension(*), intent(in)  :: InputFileVec
@@ -102,8 +104,9 @@ subroutine &
 
     ! call runParaDRAM
 
-    if (ndim>0_IK) then
+    if (ndim > 0_IK .and. njob > 0_IK) then
         call self%runSampler( ndim = ndim               &
+                            , njob = njob               &
                             , getLogFunc = getLogFunc   &
                             , inputFile = inputFileStr  &
                             )
@@ -124,6 +127,7 @@ end subroutine runParaDRAM
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 subroutine runParaDRAM  ( ndim          &
+                        , njob          &
                         , getLogFunc    &
                         , inputFile     &
                         ) !bind(C, name="runParaDRAM")
@@ -136,7 +140,7 @@ subroutine runParaDRAM  ( ndim          &
 
     implicit none
 
-    integer(IK) , intent(in)            :: ndim
+    integer(IK) , intent(in)            :: ndim, njob
     procedure(getLogFunc_proc)          :: getLogFunc
     character(*), intent(in), optional  :: inputFile
 
@@ -145,6 +149,7 @@ subroutine runParaDRAM  ( ndim          &
     ! call runParaDRAM
 
     call self%runSampler( ndim = ndim               &
+                        , njob = njob               &
                         , getLogFunc = getLogFunc   &
                         , inputFile = inputFile     &
                         )
@@ -155,7 +160,7 @@ end subroutine runParaDRAM
 ! The procedural Fortran interface to ParaDRAM with fixed global name
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-subroutine runParaDRAMIntelGNU  ( ndim                  &
+subroutine runParaDRAMIntelGNU  ( ndim, njob            &
                                 , getLogFuncIntelGNU    &
                                 , inputFileVec          &
                                 , inputFileLen          &
@@ -169,7 +174,7 @@ subroutine runParaDRAMIntelGNU  ( ndim                  &
 
     implicit none
 
-    integer(IK), intent(in)                 :: ndim
+    integer(IK), intent(in)                 :: ndim, njob
     procedure(getLogFuncIntelGNU_proc)      :: getLogFuncIntelGNU
     character(1), dimension(*), intent(in)  :: inputFileVec
     integer(IK), intent(in)                 :: inputFileLen
@@ -187,18 +192,19 @@ subroutine runParaDRAMIntelGNU  ( ndim                  &
     ! call runParaDRAM
 
     call self%runSampler( ndim = ndim               &
+                        , njob = njob               &
                         , getLogFunc = getLogFunc   &
                         , inputFile = inputFile     &
                         )
 
 contains
 
-    function getLogFunc(ndim,Point) result(logFunc)
+    function getLogFunc(ndim, njob, Point) result(logFunc)
         implicit none
-        integer(IK) , intent(in)    :: ndim
-        real(RK)    , intent(in)    :: Point(ndim)
+        integer(IK) , intent(in)    :: ndim, njob
+        real(RK)    , intent(in)    :: Point(ndim*njob)
         real(RK)                    :: logFunc
-        logFunc = getLogFuncIntelGNU(ndim,Point)
+        logFunc = getLogFuncIntelGNU(ndim, njob, Point)
     end function getLogFunc
 
 end subroutine runParaDRAMIntelGNU

@@ -338,7 +338,7 @@ contains
 
             co_LogFuncState(1:nd,0) = self%SpecMCMC%StartPointVec%Val   ! proposal state
             call self%Timer%toc()
-            co_LogFuncState(0,0) = getLogFunc( nd, co_LogFuncState(1:nd,0) )    ! proposal logFunc
+            co_LogFuncState(0,0) = getLogFunc( nd, njob, co_LogFuncState(1:nd,0) )    ! proposal logFunc
             call self%Timer%toc(); self%Stats%avgTimePerFunCalInSec = self%Stats%avgTimePerFunCalInSec + self%Timer%Time%delta
 
         else

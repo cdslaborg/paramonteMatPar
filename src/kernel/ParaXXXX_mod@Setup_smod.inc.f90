@@ -113,6 +113,7 @@ contains
                                 , getLogFunc                            &
                                 , inputFile                             &
                                 ! ParaMonte variables
+                                , njob                                  &
                                 , sampleSize                            &
                                 , randomSeed                            &
                                 , description                           &
@@ -211,6 +212,7 @@ contains
         character(*), intent(in), optional  :: inputFile
 
         ! ParaMonte variables
+        integer(IK) , intent(in), optional  :: njob
         integer(IK) , intent(in), optional  :: sampleSize
         integer(IK) , intent(in), optional  :: randomSeed
         character(*), intent(in), optional  :: description
@@ -276,6 +278,7 @@ contains
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
         call self%setupParaMonte( nd = ndim             &
+                                , njob = njob           &
                                 , name = PMSM%ParaXXXX  &
                                 , inputFile = inputFile &
                                 )
