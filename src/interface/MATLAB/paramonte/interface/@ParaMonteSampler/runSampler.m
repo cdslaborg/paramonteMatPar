@@ -283,10 +283,11 @@ function runSampler(self,ndim,getLogFunc,varargin)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     function LogFunc = getLogFuncNested(Point)
-		parpool("threads");
+		p = parpool("threads");
         parfor ijob = 1:njob
             LogFunc(ijob) = getLogFunc(Point(ijob * (ndim - 1):));
         end
+		delete(p);
     end
     getLogFuncSpec = functions(getLogFunc);
 
