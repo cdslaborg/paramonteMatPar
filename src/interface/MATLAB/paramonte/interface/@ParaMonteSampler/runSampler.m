@@ -318,11 +318,11 @@ function runSampler(self, getLogFunc, ndim, njob) %, varargin)
         self.Err.note();
     end
 
-    if strcmp(getLogFuncSpec.type,"simple") && strcmp(getLogFuncSpec.function,"getLogFunc")
-        expression = string(self.libName + "(self.platform.iscmd,ndim,inputFile)");
-    else
-        expression = string(self.libName + "(self.platform.iscmd,ndim,inputFile,@getLogFuncNested)");
-    end
+    %if strcmp(getLogFuncSpec.type,"simple") && strcmp(getLogFuncSpec.function,"getLogFunc")
+    %    expression = string(self.libName + "(self.platform.iscmd,ndim,inputFile)");
+    %else
+    expression = string(self.libName + "(self.platform.iscmd,ndim,njob,inputFile,@getLogFuncNested)");
+    %end
 
     isGNU = contains(self.libName,"gnu");
     if isGNU
