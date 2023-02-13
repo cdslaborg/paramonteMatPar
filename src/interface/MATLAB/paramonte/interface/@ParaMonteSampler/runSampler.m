@@ -67,18 +67,27 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-function runSampler(self,ndim,getLogFunc,varargin)
+function runSampler(self, getLogFunc, ndim, njob) %, varargin)
 
-    if nargin~=3
-        self.Err.msg    = "The method " + self.objectName + ".runSampler(ndim,getLogFunc) takes only two input arguments:" + newline + newline ...
-                        + "          ndim:  the number of dimensions of the domain of the " + newline ...
-                        + "                 mathematical objective function to be sampled," + newline ...
+    if nargin < 3
+        self.Err.msg    = "The method " + self.objectName + ".runSampler(getLogFunc, ndim) takes at least two input arguments:" + newline + newline ...
                         + "    getLogFunc:  a MATLAB handle to the MATLAB function implementing " + newline ...
                         + "                 the mathematical objective function to be sampled,";
+                        + "          ndim:  the number of dimensions of the domain of the " + newline ...
+                        + "                 mathematical objective function to be sampled," + newline ...
+                        + "          njob:  (optional) the number of parallel MATLAB Toolbox threads" + newline ...
+                        + "                 corresponding to individual concurrent calls to getLogFunc()." + newline ...
+        self.Err.abort();
+    elseif nargin == 3
+        njob = 1;
+    elseif ~(isnumeric(njob) && floor(njob) == njob)
+        self.Err.msg    = "The input argument `njob` must be set to an whole number (integer value) that represents" + newline ...
+                        + "                 the number of parallel MATLAB Toolbox threads corresponding" + newline ...
+                        + "                 to individual concurrent calls to getLogFunc()." + newline ...
         self.Err.abort();
     end
 
-    if ~isa(self.mpiEnabled,"logical")
+    if ~isa(self.mpiEnabled, "logical")
         self.Err.msg    = "The input argument " + self.objectName + ".mpiEnabled must be of type bool. " + newline ...
                         + "It is an optional logical (boolean) indicator which is False by default. " + newline ...
                         + "If it is set to True, it will cause the ParaDRAM simulation " + newline ...
@@ -282,14 +291,27 @@ function runSampler(self,ndim,getLogFunc,varargin)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    function LogFunc = getLogFuncNested(Point)
-		p = parpool("threads");
-        parfor ijob = 1:njob
-            LogFunc(ijob) = getLogFunc(Point(ijob * (ndim - 1):));
+    pool = gcp("nocreate");
+    if isempty(pool)
+        if self.reportEnabled
+            pool = parpool("threads");
+        else
+            evalc('pool = parpool("threads")');
         end
-		delete(p);
     end
-    getLogFuncSpec = functions(getLogFunc);
+
+    if ~isempty(njob)
+        pool = parpool("threads");
+        njob = pool.NumWorkers;
+        function LogFunc = getLogFuncNested(Point)
+            njob = size(Point, 2);
+            LogFunc = zeros(njob, 1);
+            parfor ijob = 1 : njob
+                LogFunc(ijob) = getLogFunc(Point(:, ijob));
+            end
+        end
+        getLogFuncSpec = functions(getLogFunc);
+    end
 
     if ~(self.reportEnabled || self.platform.iscmd || self.platform.isWin32)
         self.Err.msg = "check the Bash terminal (from which you opened MATLAB) for realtime simulation progress and report.";
@@ -309,7 +331,7 @@ function runSampler(self,ndim,getLogFunc,varargin)
         setenv('GFORTRAN_STDERR_UNIT', '0')
     end
     munlock(self.libName)
-    eval("clear "+self.libName);
+    eval("clear " + self.libName);
 
     try
         eval(expression);
@@ -355,6 +377,7 @@ function runSampler(self,ndim,getLogFunc,varargin)
         self.Err.abort();
     end
 
+    delete(pool);
     munlock(self.libName)
     eval("clear "+self.libName);
     if isGNU

@@ -197,8 +197,8 @@ double *getLogFuncWrapper(
                         )
     mxArray *FevalInputArgs[2];
     FevalInputArgs[0] = MEX_GETLOGFUNC_HANDLE;          //  getLogFunc handle.
-    FevalInputArgs[1] = mxCreateDoubleMatrix( ndim*njob //  m — Number of rows: Number of rows, specified as mwSize.
-                                            , 1         //  n — Number of columns: Number of columns, specified as mwSize.
+    FevalInputArgs[1] = mxCreateDoubleMatrix( ndim      //  m — Number of rows: Number of rows, specified as mwSize.
+                                            , njob      //  n — Number of columns: Number of columns, specified as mwSize.
                                             , mxREAL    //  ComplexFlag — Complex array indicator: Complex array indicator, specified as an mxComplexity value.
                                             );
     memcpy( mxGetPr(FevalInputArgs[1]), Point, ndim*njob*sizeof(double));
