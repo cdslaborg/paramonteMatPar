@@ -51,33 +51,36 @@ function &
 #else
 subroutine &
 #endif
-    runParaDRAM ( ndim          &
+    runParaDRAM ( setLogFunc4C  &
+                , ndim          &
                 , njob          &
-                , getLogFunc4C  &
                 , InputFileVec  &
                 , lenInputFile  &
-                ) bind(C, name="runParaDRAM")
+                ) bind(C, name = "runParaDRAM")
 #if INTEL_COMPILER_ENABLED && defined DLL_ENABLED && (OS_IS_WINDOWS || defined OS_IS_DARWIN)
         !DEC$ ATTRIBUTES DLLEXPORT :: runParaDRAM
 #endif
-    use, intrinsic :: iso_c_binding, only: c_char, c_funptr, c_f_procpointer !, c_null_char
+    use, intrinsic :: iso_c_binding, only: c_char, c_funptr, c_ptr, c_f_procpointer !, c_null_char
     use ParaMonteLogFunc_mod, only: getLogFunc_proc
     use Constants_mod, only: IK, RK
     use ParaDRAM_mod, only: ParaDRAM_type
 
     implicit none
 
-    integer(IK), intent(in), value                          :: ndim
-    integer(IK), intent(in), value                          :: njob
-    integer(IK), intent(in), value                          :: lenInputFile
-    type(c_funptr), intent(in), value                       :: getLogFunc4C
-    character(len=1,kind=c_char), dimension(*), intent(in)  :: InputFileVec
-    procedure(getLogFunc_proc), pointer                     :: getLogFunc
-    character(:), allocatable                               :: inputFileStr
-    type(ParaDRAM_type)                                     :: self
-    integer                                                 :: i
+    integer(IK)         , intent(in)    , value         :: ndim
+    integer(IK)         , intent(in)    , value         :: njob
+    integer(IK)         , intent(in)    , value         :: lenInputFile
+    type(c_funptr)      , intent(in)    , value         :: setLogFunc4C
+    character(1,c_char) , intent(in)    , dimension(*)  :: InputFileVec
+    procedure(getLogFunc_proc)          , pointer       :: getLogFunc
+    character(:)                        , allocatable   :: inputFileStr
+    type(ParaDRAM_type)                                 :: self
+    integer                                             :: i
+
+    type(c_ptr) :: logFuncPointerC
+    real(RK), pointer :: LogFuncPointerF(:) ! , contiguous
 #if (defined MATLAB_ENABLED || defined PYTHON_ENABLED || defined R_ENABLED)
-    integer(IK)                                             :: runParaDRAM
+    integer(IK)                                         :: runParaDRAM
     runParaDRAM = 0_IK
 #endif
 
@@ -89,7 +92,7 @@ subroutine &
     !    i = i + 1_IK
     !end do
 
-    if (lenInputFile==0_IK) then
+    if (lenInputFile == 0_IK) then
         inputFileStr = ""
     else
         allocate(character(lenInputFile) :: inputFileStr)
@@ -100,14 +103,14 @@ subroutine &
 
     ! associate the input C procedure pointer to a Fortran procedure pointer
 
-    call c_f_procpointer(cptr=getLogFunc4C, fptr=getLogFunc)
+    call c_f_procpointer(cptr = setLogFunc4C, fptr = getLogFunc)
 
     ! call runParaDRAM
 
     if (ndim > 0_IK .and. njob > 0_IK) then
-        call self%runSampler( ndim = ndim               &
+        call self%runSampler( getLogFunc = getLogFunc   &
+                            , ndim = ndim               &
                             , njob = njob               &
-                            , getLogFunc = getLogFunc   &
                             , inputFile = inputFileStr  &
                             )
     end if
@@ -115,6 +118,11 @@ subroutine &
 
 #if (defined MATLAB_ENABLED || defined PYTHON_ENABLED || defined R_ENABLED)
     if (self%Err%occurred) runParaDRAM = -1_IK
+#endif
+
+contains
+
+#if (defined MATLAB_ENABLED || defined PYTHON_ENABLED || defined R_ENABLED)
 end function runParaDRAM
 #else
 end subroutine runParaDRAM
@@ -126,9 +134,9 @@ end subroutine runParaDRAM
 ! The procedural Fortran interface to ParaDRAM
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-subroutine runParaDRAM  ( ndim          &
+subroutine runParaDRAM  ( getLogFunc    &
+                        , ndim          &
                         , njob          &
-                        , getLogFunc    &
                         , inputFile     &
                         ) !bind(C, name="runParaDRAM")
 #if INTEL_COMPILER_ENABLED && defined DLL_ENABLED && (OS_IS_WINDOWS || defined OS_IS_DARWIN)
@@ -160,8 +168,8 @@ end subroutine runParaDRAM
 ! The procedural Fortran interface to ParaDRAM with fixed global name
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-subroutine runParaDRAMIntelGNU  ( ndim, njob            &
-                                , getLogFuncIntelGNU    &
+subroutine runParaDRAMIntelGNU  ( getLogFuncIntelGNU    &
+                                , ndim, njob            &
                                 , inputFileVec          &
                                 , inputFileLen          &
                                 ) bind(C, name="runParaDRAMIntelGNU")
@@ -191,20 +199,20 @@ subroutine runParaDRAMIntelGNU  ( ndim, njob            &
 
     ! call runParaDRAM
 
-    call self%runSampler( ndim = ndim               &
+    call self%runSampler( getLogFunc = getLogFunc   &
+                        , ndim = ndim               &
                         , njob = njob               &
-                        , getLogFunc = getLogFunc   &
                         , inputFile = inputFile     &
                         )
 
 contains
 
-    function getLogFunc(ndim, njob, Point) result(logFunc)
+    function getLogFunc(Point, ndim, njob) result(logFunc)
         implicit none
         integer(IK) , intent(in)    :: ndim, njob
-        real(RK)    , intent(in)    :: Point(ndim*njob)
-        real(RK)                    :: logFunc
-        logFunc = getLogFuncIntelGNU(ndim, njob, Point)
+        real(RK)    , intent(in)    :: Point(ndim, njob)
+        real(RK)                    :: LogFunc(
+        logFunc = getLogFuncIntelGNU(Point, ndim, njob)
     end function getLogFunc
 
 end subroutine runParaDRAMIntelGNU

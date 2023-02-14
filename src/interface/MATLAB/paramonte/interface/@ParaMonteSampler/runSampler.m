@@ -40,7 +40,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%   runSampler(ndim,getLogFunc)
+%   runSampler(getLogFunc, ndim, njob)
 %
 %   Run the kernel sampler and return nothing.
 %
@@ -303,14 +303,14 @@ function runSampler(self, getLogFunc, ndim, njob) %, varargin)
     if ~isempty(njob)
         pool = parpool("threads");
         njob = pool.NumWorkers;
-        function LogFunc = getLogFuncNested(Point)
+        function LogFunc = getLogFuncWrapperM(Point)
             njob = size(Point, 2);
             LogFunc = zeros(njob, 1);
             parfor ijob = 1 : njob
                 LogFunc(ijob) = getLogFunc(Point(:, ijob));
             end
         end
-        getLogFuncSpec = functions(getLogFunc);
+        spec_getLogFunc = functions(getLogFunc);
     end
 
     if ~(self.reportEnabled || self.platform.iscmd || self.platform.isWin32)
@@ -318,10 +318,10 @@ function runSampler(self, getLogFunc, ndim, njob) %, varargin)
         self.Err.note();
     end
 
-    %if strcmp(getLogFuncSpec.type,"simple") && strcmp(getLogFuncSpec.function,"getLogFunc")
+    %if strcmp(spec_getLogFunc.type,"simple") && strcmp(spec_getLogFunc.function,"getLogFunc")
     %    expression = string(self.libName + "(self.platform.iscmd,ndim,inputFile)");
     %else
-    expression = string(self.libName + "(self.platform.iscmd,ndim,njob,inputFile,@getLogFuncNested)");
+    expression = string(self.libName + "(@getLogFuncWrapperM, ndim, njob, inputFile, self.platform.iscmd)");
     %end
 
     isGNU = contains(self.libName,"gnu");

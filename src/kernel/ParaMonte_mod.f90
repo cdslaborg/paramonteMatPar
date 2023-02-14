@@ -210,6 +210,7 @@ module ParaMonte_mod
     !> The `ParaMonte_type` sampler base class.
     type                                :: ParaMonte_type
         type(IntStr_type)               :: nd                       !< The number of dimensions of the domain of the objective function.
+        type(IntStr_type)               :: njob                     !< The number of dimensions of the domain of the objective function.
         character(8)                    :: name                     !< The ParaMonte sampler method name.
         character(16)                   :: brand                    !< The ParaMonte sampler brand (The decorated tabbed version of the sampler name).
         character(:), allocatable       :: date                     !< The date of the simulation.
@@ -282,7 +283,7 @@ contains
     !>
     !> \warning
     !> This routine has to be called by all images (processes).
-    subroutine setupParaMonte(self,nd,name,inputFile)
+    subroutine setupParaMonte(self, name, nd, njob, inputFile)
 #if INTEL_COMPILER_ENABLED && defined DLL_ENABLED && (OS_IS_WINDOWS || defined OS_IS_DARWIN)
         !DEC$ ATTRIBUTES DLLEXPORT :: setupParaMonte
 #endif
@@ -293,8 +294,9 @@ contains
         use System_mod, only: OS_type
         implicit none
         class(ParaMonte_type), intent(inout)    :: self
-        integer(IK), intent(in)                 :: nd
         character(*), intent(in)                :: name !, date, version
+        integer(IK) , intent(in)                :: nd
+        integer(IK) , intent(in), optional      :: njob
         character(*), intent(in), optional      :: inputFile
         character(*), parameter                 :: PROCEDURE_NAME = MODULE_NAME // "@setupParaMonte()"
 
@@ -312,6 +314,7 @@ contains
         ! LCOV_EXCL_STOP
 
         self%nd%val = nd
+        self%njob%val = njob
         self%Decor = Decoration_type()    ! initialize the TAB character and decoration symbol to the default values.
 
         self%name     = name
@@ -340,6 +343,7 @@ contains
         ! setup formatting variables
 
         self%nd%str = num2str(self%nd%val)
+        self%njob%str = num2str(self%njob%val)
 
         ! determine OS. Should be only needed by the Leader processes. But apparently not.
 

@@ -161,11 +161,11 @@
 
     interface
     module subroutine runSampler( self                                  &
-                                , ndim                                  &
                                 , getLogFunc                            &
+                                , ndim                                  &
+                                , njob                                  &
                                 , inputFile                             &
                                 ! ParaMonte variables
-                                , njob                                  &
                                 , sampleSize                            &
                                 , randomSeed                            &
                                 , description                           &
@@ -236,13 +236,13 @@
         class(ParaXXXX_type), intent(inout) :: self
 
         ! mandatory variables
-        integer(IK) , intent(in)            :: ndim
         procedure(getLogFunc_proc)          :: getLogFunc
+        integer(IK) , intent(in)            :: ndim
 
+        integer(IK) , intent(in), optional  :: njob
         character(*), intent(in), optional  :: inputFile
 
         ! ParaMonte variables
-        integer(IK) , intent(in), optional  :: njob
         integer(IK) , intent(in), optional  :: sampleSize
         integer(IK) , intent(in), optional  :: randomSeed
         character(*), intent(in), optional  :: description

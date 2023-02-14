@@ -109,11 +109,11 @@ contains
     !> \remark
     !> This procedure requires preprocessing.
     module subroutine runSampler( self                                  &
-                                , ndim                                  &
                                 , getLogFunc                            &
+                                , ndim                                  &
+                                , njob                                  &
                                 , inputFile                             &
                                 ! ParaMonte variables
-                                , njob                                  &
                                 , sampleSize                            &
                                 , randomSeed                            &
                                 , description                           &
@@ -206,13 +206,13 @@ contains
         class(ParaXXXX_type), intent(inout) :: self
 
         ! mandatory variables
-        integer(IK) , intent(in)            :: ndim
         procedure(getLogFunc_proc)          :: getLogFunc
+        integer(IK) , intent(in)            :: ndim
 
+        integer(IK) , intent(in), optional  :: njob
         character(*), intent(in), optional  :: inputFile
 
         ! ParaMonte variables
-        integer(IK) , intent(in), optional  :: njob
         integer(IK) , intent(in), optional  :: sampleSize
         integer(IK) , intent(in), optional  :: randomSeed
         character(*), intent(in), optional  :: description
@@ -277,9 +277,9 @@ contains
         ! Initialize SpecBase variables, then check existence of inputFile and open it and return the unit file, if it exists
         !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        call self%setupParaMonte( nd = ndim             &
+        call self%setupParaMonte( name = PMSM%ParaXXXX  &
+                                , nd = ndim             &
                                 , njob = njob           &
-                                , name = PMSM%ParaXXXX  &
                                 , inputFile = inputFile &
                                 )
 #if (defined MPI_ENABLED || defined CAF_ENABLED) && (defined CODECOV_ENABLED || defined SAMPLER_TEST_ENABLED)

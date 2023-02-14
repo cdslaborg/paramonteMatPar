@@ -47,15 +47,15 @@
 // #ifndef PM_LOG_FUNC
 // #define PM_LOG_FUNC
 // double getLogFunc   (
+//                     double []   // Point
 //                     int32_t ,   // ndim
 //                     int32_t ,   // njob
-//                     double []   // Point
 //                     );
 // #endif
 
 #ifndef PM_LOG_FUNC_WRAPPER
 #define PM_LOG_FUNC_WRAPPER
-double getLogFuncWrapper(
+double getLogFuncWrapperC(
                         int32_t ,   // ndim
                         int32_t ,   // njob
                         double []   // Point
@@ -65,16 +65,16 @@ double getLogFuncWrapper(
 #ifndef ParaMonte
 #define ParaMonte
 int32_t runParaDRAM (
-                    // ndim: dimension of the domain of the LogFunc
-                    int32_t ,
-                    // njob: the number of threads to compute LogFunc
-                    int32_t ,
                     // getLogFunc(ndim, njob, Point(ndim*njob)): procedure pointer to the LogFunc
                     double (*)  (
                                 int32_t ,   // ndim
                                 int32_t ,   // njob
                                 double []   // Point(ndim*njob)
                                 ),
+                    // ndim: dimension of the domain of the LogFunc
+                    int32_t ,
+                    // njob: the number of threads to compute LogFunc
+                    int32_t ,
                     // inputFilePtr: ParaMonte input file path string, containing a list of all optional input variables and values
                     char [],
                     // inputFilePtrLen: the length of the inputFilePtr char vector: int32_t inputFilePtrLen = strlen(inputFilePtr);
@@ -90,11 +90,11 @@ int32_t runParaDRAM (
 #include <Windows.h>
 #endif
 
-#define	MEX_ISCMD       prhs[0]
+#define MEX_GETLOGFUNC  prhs[0]
 #define MEX_NDIM        prhs[1]
 #define MEX_NJOB        prhs[2]
 #define MEX_INPUTFILE   prhs[3]
-#define MEX_GETLOGFUNC  prhs[4]
+#define	MEX_ISCMD       prhs[4]
 
 mxArray *MEX_GETLOGFUNC_HANDLE;
 
@@ -118,14 +118,14 @@ void mexFunction( int nlhs
     ///////////////////////////////////////////// check for proper number of arguments /////////////////////////////////////////////
 
     int isAnnonymous = 0;
-    if (nrhs==4) {
+    if (nrhs == 4) {
         if(!mxIsClass(MEX_GETLOGFUNC,"function_handle")) mexErrMsgTxt("First input argument is not a function handle.");
         MEX_GETLOGFUNC_HANDLE = mxDuplicateArray(MEX_GETLOGFUNC);
         isAnnonymous = 1;
     } else {
-        if (nrhs!=3) mexErrMsgIdAndTxt( "Mex:ParaMonte:invalidNumInputs", "Internal ParaMonte library error occurred: input variable mismatch.");
+        if (nrhs != 3) mexErrMsgIdAndTxt( "Mex:ParaMonte:invalidNumInputs", "Internal ParaMonte library error occurred: input variable mismatch.");
     }
-    if(nlhs>0) mexErrMsgIdAndTxt( "Mex:ParaMonte:maxlhs", "Internal ParaMonte library error occurred: Too many output arguments.");
+    if(nlhs > 0) mexErrMsgIdAndTxt( "Mex:ParaMonte:maxlhs", "Internal ParaMonte library error occurred: Too many output arguments.");
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,20 +148,21 @@ void mexFunction( int nlhs
 
     int32_t err;
     if (isAnnonymous == 1)  {
-        err = runParaDRAM   ( ndim
+        err = runParaDRAM   ( &getLogFuncWrapperC
+                            , ndim
                             , njob
-                            , &getLogFuncWrapper
                             , inputFilePtr
                             , inputFilePtrLen
                             );
 //    } else {
-//        err = runParaDRAM   ( ndim
-//                            , &getLogFunc
+//        err = runParaDRAM   ( &getLogFunc
+//                            , ndim
+//                            , njob
 //                            , inputFilePtr
 //                            , inputFilePtrLen
 //                            );
     }
-    if (err!=0) mexErrMsgIdAndTxt( "Mex:ParaMonte", "Runtime Error Occurred.");
+    if (err != 0) mexErrMsgIdAndTxt( "Mex:ParaMonte", "Runtime Error Occurred.");
 
     mxFree(inputFilePtr);
 
@@ -171,9 +172,9 @@ void mexFunction( int nlhs
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//double getLogFunc   (
-//                    int32_t ndim,
-//                    double *Point
+//double getLogFunc   ( double *Point
+//                    , int32_t ndim
+//                    , int32_t njob
 //                    )
 //{
 //    mxArray *InputArg2getLogFunc[1];
@@ -190,11 +191,10 @@ void mexFunction( int nlhs
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-double *getLogFuncWrapper(
-                        int32_t ndim,
-                        int32_t njob,
-                        double *Point
-                        )
+double *getLogFuncWrapperC  ( double *Point
+                            , int32_t ndim
+                            , int32_t njob
+                            )
     mxArray *FevalInputArgs[2];
     FevalInputArgs[0] = MEX_GETLOGFUNC_HANDLE;          //  getLogFunc handle.
     FevalInputArgs[1] = mxCreateDoubleMatrix( ndim      //  m — Number of rows: Number of rows, specified as mwSize.

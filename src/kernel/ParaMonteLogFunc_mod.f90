@@ -50,18 +50,19 @@ module ParaMonteLogFunc_mod
     !> Fortran interface to the objective function implementation (getLogFunc). Here, `proc` stands for the procedure interface.
     abstract interface
 #if defined CFI_ENABLED
-        function getLogFunc_proc(ndim, njob, Point) result(LogFunc) bind(C)
+        function getLogFunc_proc(Point, ndim, njob) result(LogFunc) bind(C)
 #else
-        function getLogFunc_proc(ndim,Point) result(LogFunc)
+        function getLogFunc_proc(Point, ndim, njob) result(LogFunc)
 #endif
             import :: IK, RK
 #if defined CFI_ENABLED
-            integer(IK), intent(in), value  :: ndim, njob
+            integer(IK) , intent(in), value :: ndim, njob
+            type(c_ptr)                     :: logFunc
 #else
-            integer(IK), intent(in)         :: ndim, njob
-#endif
-            real(RK), intent(in)            :: Point(ndim)
+            integer(IK) , intent(in)        :: ndim, njob
             real(RK)                        :: LogFunc(njob)
+#endif
+            real(RK)    , intent(in)        :: Point(ndim, njob)
         end function getLogFunc_proc
     end interface
 
@@ -70,11 +71,11 @@ module ParaMonteLogFunc_mod
 
     !> C-interoperable interface for the gradient of the objective function
     abstract interface
-        subroutine getGradLogFunc4C_proc(ndim,Point,GradLogFunc) bind(C)
+        subroutine getGradLogFunc4C_proc(Point, ndim, njob, GradLogFunc) bind(C)
             import :: IK, RK
-            integer(IK), intent(in), value  :: ndim
-            real(RK)   , intent(in)         :: Point(ndim)
-            real(RK)   , intent(out)        :: GradLogFunc(ndim)
+            integer(IK), intent(in), value  :: ndim, njob
+            real(RK)   , intent(in)         :: Point(ndim, njob)
+            real(RK)   , intent(out)        :: GradLogFunc(ndim, njob)
         end subroutine getGradLogFunc4C_proc
     end interface
 
@@ -84,20 +85,21 @@ module ParaMonteLogFunc_mod
     !> This is to be used only to bind the ParaMonte library compiled by the 
     !> Intel Compilers with Fortran applications compiled with GNU compilers on Windows.
     abstract interface
-        function getLogFuncIntelGNU_proc(ndim, njob, Point) result(LogFunc) bind(C)
+        function getLogFuncIntelGNU_proc(Point, ndim, njob) result(LogFunc) bind(C)
             import :: IK, RK
             integer(IK), intent(in)         :: ndim
-            real(RK), intent(in)            :: Point(ndim)
+            integer(IK), intent(in)         :: njob
+            real(RK), intent(in)            :: Point(ndim, njob)
             real(RK)                        :: LogFunc(njob)
         end function getLogFuncIntelGNU_proc
     end interface
 
     !> Fortran interface for the gradient of the objective function
     abstract interface
-        function getGradLogFunc_proc(ndim,Point) result(GradLogFunc)
+        function getGradLogFunc_proc(Point, ndim, njob) result(GradLogFunc)
             import :: IK, RK
-            integer(IK), intent(in) :: ndim
-            real(RK)   , intent(in) :: Point(ndim)
+            integer(IK), intent(in) :: ndim, njob
+            real(RK)   , intent(in) :: Point(ndim, njob)
             real(RK)                :: GradLogFunc(ndim)
         end function getGradLogFunc_proc
     end interface
