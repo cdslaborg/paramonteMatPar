@@ -119,8 +119,13 @@ subroutine &
 #if (defined MATLAB_ENABLED || defined PYTHON_ENABLED || defined R_ENABLED)
     if (self%Err%occurred) runParaDRAM = -1_IK
 #endif
+!
+!contains
+!
+!
+!    c_p = foofunc()
+!    call c_f_pointer(c_p, f_p, [3])
 
-contains
 
 #if (defined MATLAB_ENABLED || defined PYTHON_ENABLED || defined R_ENABLED)
 end function runParaDRAM
